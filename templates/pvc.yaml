@@ -1,0 +1,23 @@
+{{- with .Values.pvc.claims}}
+{{- range .}}
+{{- if .enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "utils-helm-charts.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "utils-helm-charts.labels" $ | nindent 4 }}
+  annotations:
+    {{- if .keep }}
+    "helm.sh/resource-policy": keep
+    {{- end}}
+spec:
+  accessModes:
+    - {{ default $.Values.pvc.defaultAccessMode .accessMode }}
+  storageClassName: {{ default $.Values.pvc.defaultStorageClassName .storageClassName }}
+  resources:
+    requests:
+      storage: {{ default $.Values.pvc.defaultCapacity .capacity }}
+{{- end}}
+{{- end}}
+{{- end}}

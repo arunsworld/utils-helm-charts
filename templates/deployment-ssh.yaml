@@ -1,0 +1,75 @@
+{{- if .Values.ssh.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "utils-helm-charts.fullname" . }}-ssh
+  labels:
+    {{- include "utils-helm-charts.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.ssh.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "utils-helm-charts.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: "ssh"
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      labels:
+        {{- include "utils-helm-charts.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: "ssh"
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "utils-helm-charts.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-ssh
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.ssh.image.repository }}:{{ .Values.ssh.image.tag }}"
+          imagePullPolicy: {{ .Values.ssh.image.pullPolicy }}
+          env:
+          {{- if .Values.ssh.users }}
+            - name: SSH_USERS
+              value: "/etc/ssh/users.yml"
+          {{- end }}
+          {{- if .Values.ssh.allowsessions }}
+            - name: SSH_ALLOW_SESSION
+              value: "true"
+          {{- end}}
+          {{- if .Values.ssh.allowportforward }}
+            - name: SSH_ALLOW_PORT_FWD
+              value: "true"
+          {{- end}}
+          {{- if .Values.ssh.allowreverseportforward }}
+            - name: SSH_ALLOW_REVERSE_PORT_FWD
+              value: "true"
+          {{- end}}
+          {{- with .Values.ssh.envs }}
+            {{- toYaml . | nindent 12}}
+          {{- end}}
+          ports:
+            - name: ssh
+              containerPort: 2222
+          volumeMounts:
+            {{- if .Values.ssh.users }}
+            - name: {{ include "utils-helm-charts.fullname" $ }}-ssh
+              mountPath: "/etc/ssh"
+            {{- end}}
+          {{- with coalesce .Values.ssh.resources .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+        {{- if .Values.ssh.users }}
+        - name: {{ include "utils-helm-charts.fullname" $ }}-ssh
+          configMap:
+            name: {{ include "utils-helm-charts.fullname" $ }}-ssh
+        {{- end}}
+{{- end}}

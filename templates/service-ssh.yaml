@@ -1,0 +1,17 @@
+{{- if .Values.ssh.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "utils-helm-charts.fullname" . }}-ssh
+  labels:
+    {{- include "utils-helm-charts.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.ssh.serviceType }}
+  ports:
+    - name: ssh
+      port: {{ .Values.ssh.port }}
+      targetPort: ssh
+  selector:
+    {{- include "utils-helm-charts.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: "ssh"
+{{- end}}

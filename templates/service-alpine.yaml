@@ -1,0 +1,19 @@
+{{- if .Values.alpine.enabled }}
+{{- if .Values.alpine.service }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "utils-helm-charts.fullname" . }}-alpine
+  labels:
+    {{- include "utils-helm-charts.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.alpine.service.type }}
+  ports:
+    {{- with .Values.alpine.service.ports }}
+    {{- toYaml . | nindent 4 }}
+    {{- end}}
+  selector:
+    {{- include "utils-helm-charts.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: "alpine"
+{{- end}}
+{{- end}}
