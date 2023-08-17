@@ -1,0 +1,17 @@
+{{- if .Values.fp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "utils-helm-charts.fullname" . }}-fp
+  labels:
+    {{- include "utils-helm-charts.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.fp.serviceType }}
+  ports:
+    - name: socks5
+      port: {{ .Values.fp.port }}
+      targetPort: socks5
+  selector:
+    {{- include "utils-helm-charts.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: "fp"
+{{- end}}

@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Provide the name of the configmap having the block list for forward-proxy
+*/}}
+{{- define "utils-helm-charts.fp-configmap" -}}
+{{- if .Values.fp.existingBlockListConfig }}
+{{- .Values.fp.existingBlockListConfig }}
+{{- else }}
+{{- include "utils-helm-charts.fullname" . }}-fp
+{{- end }}
+{{- end}}

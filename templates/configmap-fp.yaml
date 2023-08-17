@@ -1,0 +1,16 @@
+{{- if .Values.fp.enabled }}
+{{- if eq .Values.fp.existingBlockList "" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "utils-helm-charts.fullname" $ }}-fp
+  labels:
+    {{- include "utils-helm-charts.labels" $ | nindent 4 }}
+data:
+  {{ .Values.fp.blockListFileName }}: |-
+    blocklist:
+      {{- with .Values.fp.blocklist }}
+      {{- toYaml . | nindent 6}}
+      {{- end}}
+{{- end}}
+{{- end}}

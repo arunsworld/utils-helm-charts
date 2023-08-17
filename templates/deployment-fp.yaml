@@ -1,0 +1,70 @@
+{{- if .Values.fp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "utils-helm-charts.fullname" . }}-fp
+  labels:
+    {{- include "utils-helm-charts.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.fp.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "utils-helm-charts.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: "fp"
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 10 }}
+      {{- end }}
+      labels:
+        {{- include "utils-helm-charts.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: "fp"
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "utils-helm-charts.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-fp
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.fp.image.repository }}:{{ .Values.fp.image.tag }}"
+          imagePullPolicy: {{ .Values.fp.image.pullPolicy }}
+          env:
+            - name: HIST_LOGGER_FILE
+              value: /tmp/hist-logger.yml
+            - name: FQDN_BLOCK_FILE
+              value: /etc/fp/{{ .Values.fp.blockListFileName }}
+          {{- with .Values.fp.envs }}
+            {{- toYaml . | nindent 12}}
+          {{- end}}
+          ports:
+            - name: socks5
+              containerPort: 10800
+          volumeMounts:
+          {{- if .Values.fp.existingBlockListPvc }}
+            - name: fqdn-block-list-pvc
+              mountPath: "/etc/fp"
+          {{- else }}
+            - name: fqdn-block-file
+              mountPath: "/etc/fp"
+          {{- end}}
+          {{- with coalesce .Values.fp.resources .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+      volumes:
+        - name: fqdn-block-file
+          configMap:
+            name: {{ include "utils-helm-charts.fp-configmap" . }}
+        {{- if .Values.fp.existingBlockListPvc }}
+        - name: fqdn-block-list-pvc
+          persistentVolumeClaim:
+            claimName: {{ .Values.fp.existingBlockListPvc }}
+            readOnly: true
+        {{- end}}
+{{- end}}
